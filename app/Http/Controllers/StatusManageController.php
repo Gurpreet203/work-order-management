@@ -33,7 +33,7 @@ class StatusManageController extends Controller
             $progress = Progress::create([
                 'work_order_id' => $workOrder->id,
                 'user_id' => Auth::id(),
-                'assigned_to' => Auth::user()->user_id,
+                'assigned_to' => $workOrder->user_id,
                 'description' => $attributes['description'],
                 'status_id' => $attributes['status_id']
             ]);
@@ -51,7 +51,7 @@ class StatusManageController extends Controller
             }
             $user = User::find($workOrder->user_id);
 
-            //Notification::send($user, new WorkOrderClosedNotification(Auth::user(), $workOrder));
+            Notification::send($user, new WorkOrderClosedNotification(Auth::user(), $workOrder));
 
             return to_route('work-orders.index')->with('succcess', 'Successfully Work Order Closed');
 
