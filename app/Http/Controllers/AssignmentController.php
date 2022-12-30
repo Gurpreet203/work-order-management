@@ -61,61 +61,56 @@ class AssignmentController extends Controller
             $assigned_to = Auth::user()->user_id == 0 ? $workOrder->user_id : Auth::user()->user_id;
         }
 
+        if (!Assignment::exist($workOrder)->first())
+        {
+            $assignment = $workOrder->assignment()->save($workOrder ,[
+                'user_id' => $assigned_to,
+                'assigned_by' => Auth::id()
+            ]); 
+        }
+        else
+        {
+            $workOrder->assignment()->toggle([
+                'user_id' => $assigned_to,
+                'assigned_by' => Auth::id()
+            ]);
+            $workOrder->assignment()->save($workOrder, [
+                'user_id' => $assigned_to,
+                'assigned_by' => Auth::id()
+            ]);
+            $assignment = Assignment::exist($workOrder)->first();
 
-            if (!Assignment::exist($workOrder)->first())
-            {
-                $assignment = $workOrder->assignment()->save($workOrder ,[
-                    'work_order_id' => $workOrder->id,
-                    'user_id' => $assigned_to,
-                    'assigned_by' => Auth::id()
-                ]); 
-            }
-            else
-            {
-                $workOrder->assignment()->toggle([
-                    'user_id' => $assigned_to,
-                    'assigned_by' => Auth::id()
-                ]);
-                $workOrder->assignment()->save($workOrder, [
-                    'user_id' => $assigned_to,
-                    'assigned_by' => Auth::id()
-                ]);
-                $assignment = Assignment::exist($workOrder)->first();
+        }
+        
+        $progress = Progress::create([
+            'work_order_id' => $workOrder->id,
+            'user_id' => Auth::id(),
+            'assigned_to' => $assigned_to,
+            'description' => $attributes['description'],
+            'status_id' => $attributes['status_id']
+        ]);
 
-            }
-            
-            $progress = Progress::create([
+        if ($request['file'])
+        {
+            $attachment = $request->file('file')->store('/attachments');
+
+            $assignment->attachments()->create([
+                'url' => $attachment,
                 'work_order_id' => $workOrder->id,
-                'user_id' => Auth::id(),
-                'assigned_to' => $assigned_to,
-                'description' => $attributes['description'],
-                'status_id' => $attributes['status_id']
+                'extension' => $request->file('file')->extension(),
+                'progress_id' => $progress->id
             ]);
+        }
 
-            if ($request['file'])
-            {
-                $attachment = $request->file('file')->store('/attachments');
+        $workOrder->update([
+            'assigned_to' => $assigned_to
+        ]);
 
-                $assignment->attachments()->create([
-                    'url' => $attachment,
-                    'work_order_id' => $workOrder->id,
-                    'extension' => $request->file('file')->extension(),
-                    'progress_id' => $progress->id
-                ]);
-            }
+        if (Auth::user()->role_id == Role::ADMIN)
+        {
+            return back()->with('success', 'Successfully work assigned');
+        }
 
-            $workOrder->update([
-                'assigned_to' => $assigned_to
-            ]);
-
-            if (Auth::user()->role_id == Role::ADMIN)
-            {
-                return to_route('work-orders.index')->with('success', 'Successfully work assigned');
-            }
-
-            return to_route('assigned.index')->with('success', 'Successfully work assigned');
-        
-        
-        return back()->with('error', 'Assignment Already Exist');
+        return to_route('assigned.index')->with('success', 'Successfully work assigned');
     }
 }

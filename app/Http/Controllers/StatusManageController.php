@@ -51,7 +51,7 @@ class StatusManageController extends Controller
             }
             $user = User::find($workOrder->user_id);
 
-            Notification::send($user, new WorkOrderClosedNotification(Auth::user(), $workOrder));
+            //Notification::send($user, new WorkOrderClosedNotification(Auth::user(), $workOrder));
 
             return to_route('work-orders.index')->with('succcess', 'Successfully Work Order Closed');
 
