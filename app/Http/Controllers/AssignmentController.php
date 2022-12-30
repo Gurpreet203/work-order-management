@@ -18,7 +18,6 @@ class AssignmentController extends Controller
     {
         return view('workOrders.index', [
             'workOrders' => WorkOrder::wherehas('assignment')
-                ->visibleToAssignee()
                 ->with('status', 'StatusManage')
                 ->latest()
                 ->paginate()
@@ -35,7 +34,7 @@ class AssignmentController extends Controller
                             ->toArray()
                         )],
             'status_id' => 'required|exists:statuses,id',
-            'description' => 'required_if:status_id,3',
+            'description' => 'required_if:status_id,3,4',
             'file' => 'mimes:jpg,jpeg,png,mp4,pdf,ppt,xlsx,doc,docx,csv,txt,gif,mp3'
         ], [
             'description.required_if' => 'Description is required',
@@ -44,53 +43,54 @@ class AssignmentController extends Controller
 
         $StatusManage = new StatusManageController;
 
-        if ($attributes['status_id'] != Status::CLOSE && Auth::user()->is_employee)
+        if ($attributes['status_id'] != Status::RESOLVE && Auth::user()->is_employee)
         {
             $StatusManage->update($workOrder, $attributes);
 
-            return back()->with('success', 'Status Updated');
+            return back()->with('success', 'Status Updates');
         }
 
-        $assignment = $StatusManage->store($attributes, $workOrder);
+        $assignment = $StatusManage->store($attributes, $workOrder, $request);
 
-         if (Auth::user()->role_id != Role::EMPLOYEE && $attributes['status_id'] != Status::CLOSE)
+         if (Auth::user()->role_id != Role::EMPLOYEE && $attributes['status_id'] != Status::RESOLVE)
         {
             $assigned_to = $attributes['user_id'];
         }
         else
         {
-            $assigned_to = Auth::user()->user_id  ?? $workOrder->user_id;
+            $assigned_to = Auth::user()->user_id == 0 ? $workOrder->user_id : Auth::user()->user_id;
         }
 
-        if (!$workOrder->exist($assigned_to , Auth::id(), $workOrder))
-        {
 
-            if ($attributes['status_id'] != Status::CLOSE)
+            if (!Assignment::exist($workOrder)->first())
             {
-                $temp_assign = Assignment::exist($workOrder)->first();
-
-                if ($temp_assign)
-                {
-                    $temp_assign->update([
-                        'user_id' => $attributes['user_id'] ?? Auth::user()->user_id,
-                        'assigned_by' => Auth::id()
-                    ]);
-                }
-                else
-                {
-                    $assignment = $workOrder->assignment()->save($workOrder, [
+                $assignment = $workOrder->assignment()->save($workOrder ,[
+                    'work_order_id' => $workOrder->id,
+                    'user_id' => $assigned_to,
+                    'assigned_by' => Auth::id()
+                ]); 
+            }
+            else
+            {
+                $workOrder->assignment()->toggle([
                     'user_id' => $assigned_to,
                     'assigned_by' => Auth::id()
                 ]);
-                }
-            }
-                $progress = Progress::create([
-                    'work_order_id' => $workOrder->id,
-                    'description' => $attributes['description'],
-                    'user_id' => Auth::id(),
-                    'assigned_to' => $assigned_to,
-                    'status_id' => $attributes['status_id']
+                $workOrder->assignment()->save($workOrder, [
+                    'user_id' => $assigned_to,
+                    'assigned_by' => Auth::id()
                 ]);
+                $assignment = Assignment::exist($workOrder)->first();
+
+            }
+            
+            $progress = Progress::create([
+                'work_order_id' => $workOrder->id,
+                'user_id' => Auth::id(),
+                'assigned_to' => $assigned_to,
+                'description' => $attributes['description'],
+                'status_id' => $attributes['status_id']
+            ]);
 
             if ($request['file'])
             {
@@ -110,11 +110,11 @@ class AssignmentController extends Controller
 
             if (Auth::user()->role_id == Role::ADMIN)
             {
-                return back()->with('success', 'Successfully work assigned');
+                return to_route('work-orders.index')->with('success', 'Successfully work assigned');
             }
 
             return to_route('assigned.index')->with('success', 'Successfully work assigned');
-        }
+        
         
         return back()->with('error', 'Assignment Already Exist');
     }

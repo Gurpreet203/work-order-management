@@ -24,7 +24,15 @@ class StatusSeeder extends Seeder
         ]);
 
         Status::create([
+            'name' => 'Resolve'
+        ]);
+
+        Status::create([
             'name' => 'Close'
+        ]);
+
+        Status::create([
+            'name' => 'Re Open'
         ]);
     }
 }

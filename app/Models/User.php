@@ -94,6 +94,16 @@ class User extends Authenticatable
         return $this->role_id == Role::EMPLOYEE;
     }
 
+    public function getIsAdminAttribute()
+    {
+        return $this->role_id == Role::ADMIN;
+    }
+
+    public function getIsManagerAttribute()
+    {
+        return $this->role_id == Role::MANAGER;
+    }
+
     public function getNameAttribute()
     {
         return $this->first_name.' '.$this->last_name;

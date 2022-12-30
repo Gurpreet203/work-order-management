@@ -42,11 +42,6 @@ class WorkOrder extends Model
             ->latest();
     }
 
-    public function scopevisibleToAssignee($query)
-    {
-        return $query->where('assigned_to', Auth::id());
-    }
-
     public function scopeSearch($query, array $fillter)
     {
         return $query->when($fillter['search'] ?? false, function($query, $search) {
@@ -90,15 +85,5 @@ class WorkOrder extends Model
         return $this->hasOne(StatusManage::class)
             ->latestOfMany()
             ->with('status');
-    }
-
-    // functions
-
-    public function exist($assigned_to, $user_id, $workOrder)
-    {
-        return Progress::where('assigned_to', $assigned_to)
-            ->where('user_id', $user_id)
-            ->where('work_order_id', $workOrder->id)
-            ->first();
     }
 }

@@ -15,7 +15,6 @@
             $assignedUserId = null;
         @endphp
 
-        @if (Auth::user()->role_id == 1 || Auth::user()->customer)
             <h2>Progress:-</h2>
 
             <div class="work-order-detail">
@@ -59,7 +58,6 @@
                     </div>
                 @endforeach
             </div>
-        @endif
 
         @if (!Auth::user()->customer)
             <h2>Edit Section:- </h2>
@@ -86,15 +84,21 @@
                     <label for="status_id" class="form-label">Status</label>
                     <select name="status_id" id="" class="form-select">
                         @foreach ($statuses as $status)
-                            @if (!Auth::user()->is_employee && $status->id == 2)
-                                @continue
+                            @if (Auth::user()->is_admin)
+                                @if ($status->id == 1 || $status->id == 4 || $status->id ==5)
+                                    <option value="{{ $status->id }}">{{ $status->name }}</option>
+                                @endif
                             @endif
-                            @if (Auth::user()->is_employee && $status->id == 1)
-                                @continue
+                            @if (Auth::user()->is_employee)
+                                @if ($status->id == 1 || $status->id ==2 || $status->id ==3)
+                                    <option value="{{ $status->id }}">{{ $status->name }}</option>
+                                @endif
                             @endif
-                            <option value="{{ $status->id }}" @if ($status->id == $workOrder->status->id)
-                                Selected
-                            @endif>{{ $status->name }}</option>
+                            @if (Auth::user()->is_manager)
+                                @if ($status->id == 1 || $status->id ==3 || $status->id == 5)
+                                    <option value="{{ $status->id }}">{{ $status->name }}</option>
+                                @endif
+                            @endif
                         @endforeach
                     </select>
                     <x-error name="status_id" />

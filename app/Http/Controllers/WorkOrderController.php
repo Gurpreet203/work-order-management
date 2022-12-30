@@ -45,7 +45,6 @@ class WorkOrderController extends Controller
 
         $progress = Progress::create([
             'work_order_id' => $workOrder->id,
-            'description' => $attributes['description'],
             'user_id' => Auth::id(),
             'assigned_to' => Role::ADMIN,
             'status_id' => Status::OPEN

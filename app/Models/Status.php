@@ -12,7 +12,9 @@ class Status extends Model
 
     const OPEN = 1;
     const INPROGRESS = 2;
-    const CLOSE = 3;
+    const RESOLVE = 3;
+    const CLOSE = 4;
+    const REOPEN = 5;
 
     protected $fillable = [
         'name',
