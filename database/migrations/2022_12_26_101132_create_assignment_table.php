@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('work_order_id')->constrained();
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('assigned_by')->nullable()->constrained('users');
+            $table->foreignId('assigned_by')->constrained('users');
             $table->timestamps();
         });
     }

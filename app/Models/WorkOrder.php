@@ -65,9 +65,8 @@ class WorkOrder extends Model
     public function assignment()
     {
         return $this->belongsToMany(User::class, 'assignment')
-            ->withPivot('id', 'user_id', 'assigned_by')
-            ->withTimestamps()
-            ->wherePivot('user_id', Auth::id());
+            ->withPivot('id', 'user_id')
+            ->withTimestamps();
     }
 
     public function attachments()

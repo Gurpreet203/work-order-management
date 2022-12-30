@@ -50,9 +50,9 @@ class AssignmentController extends Controller
             return back()->with('success', 'Status Updates');
         }
 
-        $assignment = $StatusManage->store($attributes, $workOrder, $request);
+        $route =  $StatusManage->store($workOrder, $request);
 
-         if (Auth::user()->role_id != Role::EMPLOYEE && $attributes['status_id'] != Status::RESOLVE)
+        if (!Auth::user()->is_employee && $attributes['status_id'] != Status::RESOLVE && $attributes['status_id'] != Status::CLOSE )
         {
             $assigned_to = $attributes['user_id'];
         }
@@ -61,9 +61,10 @@ class AssignmentController extends Controller
             $assigned_to = Auth::user()->user_id == 0 ? $workOrder->user_id : Auth::user()->user_id;
         }
 
+
         if (!Assignment::exist($workOrder)->first())
         {
-            $assignment = $workOrder->assignment()->save($workOrder ,[
+            $assignment = $workOrder->assignment()->save($workOrder, [
                 'user_id' => $assigned_to,
                 'assigned_by' => Auth::id()
             ]); 
@@ -71,9 +72,11 @@ class AssignmentController extends Controller
         else
         {
             $workOrder->assignment()->toggle([
+                'work_order_id' => $workOrder->id,
                 'user_id' => $assigned_to,
                 'assigned_by' => Auth::id()
             ]);
+
             $workOrder->assignment()->save($workOrder, [
                 'user_id' => $assigned_to,
                 'assigned_by' => Auth::id()
@@ -106,9 +109,10 @@ class AssignmentController extends Controller
             'assigned_to' => $assigned_to
         ]);
 
-        if (Auth::user()->role_id == Role::ADMIN)
+        if (Auth::user()->is_admin)
         {
-            return back()->with('success', 'Successfully work assigned');
+            return $route ? $route->with('success', 'Successfully Work Order Closed') :
+                back()->with('success', 'Successfully work assigned');
         }
 
         return to_route('assigned.index')->with('success', 'Successfully work assigned');
