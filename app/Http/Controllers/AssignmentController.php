@@ -71,7 +71,7 @@ class AssignmentController extends Controller
         }
         else
         {
-            $workOrder->assignment()->toggle([
+            $workOrder->assignment()->detach([
                 'work_order_id' => $workOrder->id,
                 'user_id' => $assigned_to,
                 'assigned_by' => Auth::id()
